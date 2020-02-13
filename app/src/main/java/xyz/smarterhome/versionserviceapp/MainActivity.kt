@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity() {
                 is VersionServiceResult.UpdateRequired -> {
                     val alertBuilder = AlertDialog.Builder(this)
                     alertBuilder.setTitle("App Update Available!")
-                    alertBuilder.setMessage("A new required update is available in the Google Play Store: v${it.version}")
+                    alertBuilder.setMessage("A new required update is available in the Google Play Store: v${it.minVersion}")
                     alertBuilder.setCancelable(false)
                     alertBuilder.setPositiveButton("Update Now") { _, _ ->
                         val browserIntent =

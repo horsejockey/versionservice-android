@@ -8,42 +8,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 
-private enum class FirebaseCollection(val path: String){
-    APP("app")
-}
-
-private enum class FirebaseKey(val path: String){
-    MIN_VERSION("androidMinVersion"),
-    CURRENT_VERSION("currentVersion"),
-    STORE_ID("storeID");
-}
-
-private class AppVersion(appVersion: String): Comparable<AppVersion> {
-    val versionList: List<Int>
-
-    init {
-        versionList = appVersion.split(".").mapNotNull { it.toIntOrNull() }
-    }
-
-    override fun compareTo(other: AppVersion): Int {
-        val countComparison = this.versionList.count().compareTo(other.versionList.count())
-        if (countComparison != 0) return countComparison
-
-        for ((index, value) in versionList.withIndex()){
-            val valueComparison = value.compareTo(other.versionList[index])
-            if (valueComparison != 0) return valueComparison
-        }
-        return 0
-    }
-}
-
-sealed class VersionServiceResult {
-    object NoUpdate: VersionServiceResult()
-    class UpdateAvailable(val uri: Uri, val version: String): VersionServiceResult()
-    class UpdateRequired(val uri: Uri, val version: String): VersionServiceResult()
-    class Erred(val message: String?): VersionServiceResult()
-}
-
 class VersionService(context: Context, apiKey: String, projectID: String, applicationID: String) {
 
     val fireStore: FirebaseFirestore
@@ -65,14 +29,18 @@ class VersionService(context: Context, apiKey: String, projectID: String, applic
     }
 
     fun validateAppVersion(bundleID: String, version: String, completion: (VersionServiceResult) -> Unit) {
+        val uri = Uri.parse("https://play.google.com/store/apps/details?id=${bundleID}")
+
         fireStore.collection(FirebaseCollection.APP.path).get().addOnSuccessListener { result ->
             val targetApp = result.firstOrNull { it.id == bundleID }
             val minVersion = targetApp?.getString(FirebaseKey.MIN_VERSION.path)
+            val currentVersion = targetApp?.getString(FirebaseKey.CURRENT_VERSION.path)
             if (minVersion == null) {
                 completion(VersionServiceResult.Erred("Bad data from parse"))
             }else if (AppVersion(version) < AppVersion(minVersion)) {
-                val uri = Uri.parse("https://play.google.com/store/apps/details?id=${bundleID}")
-                completion(VersionServiceResult.UpdateRequired(uri, minVersion))
+                completion(VersionServiceResult.UpdateRequired(uri, minVersion, currentVersion))
+            }else if (currentVersion != null && AppVersion(version) < AppVersion(currentVersion)) {
+                completion(VersionServiceResult.UpdateAvailable(uri, currentVersion))
             }else{
                 completion(VersionServiceResult.NoUpdate)
             }
