@@ -17,13 +17,18 @@ class VersionService(context: Context, apiKey: String, projectID: String, applic
     }
 
     init {
-        val options = FirebaseOptions.Builder()
-            .setApiKey(apiKey)
-            .setApplicationId(applicationID)
-            .setProjectId(projectID)
-            .build()
+        try {
+            FirebaseApp.getInstance(firebaseInstanceName)
+        }catch(e: Throwable){
+            val options = FirebaseOptions.Builder()
+                .setApiKey(apiKey)
+                .setApplicationId(applicationID)
+                .setProjectId(projectID)
+                .build()
 
-        Firebase.initialize(context, options, firebaseInstanceName)
+            Firebase.initialize(context, options, firebaseInstanceName)
+        }
+
         val versionService = FirebaseApp.getInstance(firebaseInstanceName)
         fireStore = FirebaseFirestore.getInstance(versionService)
     }
