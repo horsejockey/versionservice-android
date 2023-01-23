@@ -41,7 +41,7 @@ dependencies {
 
 def libraryGroupId = 'io.tesseractgroup'
 def libraryArtifactId = 'versionservice'
-def libraryVersion = '1.0.3'
+def libraryVersion = '1.0.4'
 
 afterEvaluate {
     publishing {
